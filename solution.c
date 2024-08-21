@@ -9,13 +9,13 @@
 //and also variable renaming, and also auto parenthesis closing
 //and also god haven't let me go insane... yet... or did he? (cue VSauce sfx)
 
-//definitions: arrayName__index1Name_index2Name_..._indexNName
 double calculateNextPrice(double currentPrice, double priceDelta);
 double calculateDelta(int buyer, int day);
 int getRemainingBuyerBuyCapacity(int buyer, int onDay);
 int getRemainingBoxes(int onDay);
 
 int Buyers, Days, BoxesOfChocolate;
+//definitions: arrayName__index1Name_index2Name_..._indexNName
 double** BuyPrice__buyer_day;
 double** PriceDelta__buyer_day; //omg i need this in the formula AAAAAAA
 int* MaxChocolateWeCanSell__buyer;

@@ -2,20 +2,28 @@
 #include <string.h>
 #include <math.h>
 
+//thank god that:
+//god gave me some brain power to attempt this
+//Zeal exists, which helps me significantly on looking up C functions
+//bracket pair colors are a thing in VSCode
+//and also variable renaming, and also auto parenthesis closing
+//and also god haven't let me go insane... yet... or did he? (cue VSauce sfx)
+
+//definitions: arrayName__index1Name_index2Name_..._indexNName
 double calculateNextPrice(double currentPrice, double priceDelta);
 double calculateDelta(int buyer, int day);
 int doCalculations();
 int getRemainingBuyerBuyCapacity(int buyer, int onDay);
 int getRemainingBoxes(int onDay);
-//definitions: arrayName__index1Name_index2Name_..._indexNName
 
 int Buyers, Days, BoxesOfChocolate;
 double** BuyPrice__buyer_day;
+double** PriceDelta__buyer_day; //omg i need this in the formula AAAAAAA
 int* MaxChocolateWeCanSell__buyer;
 double** CoefficentOfMarketInfluence__buyer_day;
 double** RandomNoise__buyer_day;
 double*** CoefficientOfBuyerInfluence__fromBuyer_toBuyer_day;
-double* CoefficentOfNDaysAgo;
+double* CoefficentOfThePreviousOrders__daysAgo;
 int** ChocolatesSold__day_buyer;
 int main(int argc, char** argv) {
 
@@ -23,24 +31,29 @@ int main(int argc, char** argv) {
 
     BuyPrice__buyer_day = malloc(sizeof(double*) * Buyers);
     MaxChocolateWeCanSell__buyer = malloc(sizeof(int) * Buyers);
-    for (int i = 0; i < Buyers;i++) {
-        BuyPrice__buyer_day[i] = malloc(sizeof(double) * Days);
-        memset(&BuyPrice__buyer_day[i], 0, sizeof(double) * Days); //just in case we read it
+    for (int buyer = 0; buyer < Buyers;buyer++) {
+        BuyPrice__buyer_day[buyer] = malloc(sizeof(double) * Days);
+        memset(&BuyPrice__buyer_day[buyer], 0, sizeof(double) * Days); //just in case we read it
 
-        scanf(" %lf %d", &BuyPrice__buyer_day[i][0], &MaxChocolateWeCanSell__buyer[i]);
+        scanf(" %lf %d", &BuyPrice__buyer_day[buyer][0], &MaxChocolateWeCanSell__buyer[buyer]);
+    }
+    PriceDelta__buyer_day = malloc(sizeof(double*) * Buyers);
+    for (int buyer = 0;buyer < Buyers;buyer++) {
+        PriceDelta__buyer_day[buyer] = malloc(sizeof(double) * Days);
+        memset(&PriceDelta__buyer_day[buyer], 0, sizeof(double) * Days);
     }
 
     CoefficentOfMarketInfluence__buyer_day = malloc(sizeof(double*) * Buyers);
-    for (int i = 0; i < Buyers; i++) {
-        CoefficentOfMarketInfluence__buyer_day[i] = malloc(sizeof(double) * Days);
-        for (int i2 = 0; i2 < Days;i2++)
-            scanf(" %lf", &CoefficentOfMarketInfluence__buyer_day[i][i2]);
+    for (int buyer = 0; buyer < Buyers; buyer++) {
+        CoefficentOfMarketInfluence__buyer_day[buyer] = malloc(sizeof(double) * Days);
+        for (int day = 0; day < Days;day++)
+            scanf(" %lf", &CoefficentOfMarketInfluence__buyer_day[buyer][day]);
     }
     RandomNoise__buyer_day = malloc(sizeof(double*) * Buyers);
-    for (int i = 0; i < Buyers; i++) {
-        RandomNoise__buyer_day[i] = malloc(sizeof(double) * Days);
-        for (int i2 = 0; i2 < Days;i2++)
-            scanf(" %lf", &RandomNoise__buyer_day[i][i2]);
+    for (int buyer = 0; buyer < Buyers; buyer++) {
+        RandomNoise__buyer_day[buyer] = malloc(sizeof(double) * Days);
+        for (int day = 0; day < Days;day++)
+            scanf(" %lf", &RandomNoise__buyer_day[buyer][day]);
     }
 
     //they like making things complicated, don't they? First "block" is "0 lines" since it has i-1 lines
@@ -54,8 +67,8 @@ int main(int argc, char** argv) {
                 scanf(" %lf", &CoefficientOfBuyerInfluence__fromBuyer_toBuyer_day[i][i2][i3]);
         }
     }
-    CoefficentOfNDaysAgo = malloc(sizeof(double) * Days);
-    for (int day = 0; day < Days;day++) scanf(" %lf", &CoefficentOfNDaysAgo[day]);
+    CoefficentOfThePreviousOrders__daysAgo = malloc(sizeof(double) * Days);
+    for (int day = 0; day < Days;day++) scanf(" %lf", &CoefficentOfThePreviousOrders__daysAgo[day]);
 
     //do the stuff
     ChocolatesSold__day_buyer = malloc(sizeof(int*) * Days);
@@ -80,8 +93,38 @@ double calculateNextPrice(double currentPrice, double PriceChange) {
 //also i thank god auto brackets and bracket pair colorization exists.
 double calculateDelta(int buyer, int day) {
     double buyerInfluenceSum = 0, previousDaysSum = 0;
-    return (BuyPrice__buyer_day[buyer][day] * (1 - (1 / ((__DBL_EPSILON__, (CoefficentOfMarketInfluence__buyer_day[buyer][day] * (ChocolatesSold__day_buyer)))))))
-        + (RandomNoise__buyer_day[buyer][day] * BuyPrice__buyer_day[buyer][day])
+    for (int previousBuyer = 0; previousBuyer < buyer; previousBuyer++)
+        buyerInfluenceSum += (
+            (CoefficientOfBuyerInfluence__fromBuyer_toBuyer_day[buyer][previousBuyer][day] * PriceDelta__buyer_day[previousBuyer][day])
+            / log(
+                fmax(__DBL_EPSILON__,
+                    fabs(BuyPrice__buyer_day[buyer][day] - BuyPrice__buyer_day[previousBuyer][day])
+                )
+            ));
+    for (int daysAgo = 0; daysAgo < day - 1; daysAgo++)
+        previousDaysSum += CoefficentOfThePreviousOrders__daysAgo[daysAgo] * ChocolatesSold__day_buyer[day - daysAgo][buyer];
+
+    return
+        (
+            BuyPrice__buyer_day[buyer][day]
+            * (
+                1 -
+                (1 /
+                    (
+                        pow(__DBL_EPSILON__,
+                            (CoefficentOfMarketInfluence__buyer_day[buyer][day] * (
+                                ChocolatesSold__day_buyer[day][buyer] / getRemainingBuyerBuyCapacity(buyer, day)
+                                )
+                                )
+                        )
+                        )
+                    )
+                )
+            )
+        + (
+            RandomNoise__buyer_day[buyer][day]
+            * BuyPrice__buyer_day[buyer][day]
+            )
         + buyerInfluenceSum
         + previousDaysSum;
 }

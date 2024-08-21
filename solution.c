@@ -12,7 +12,6 @@
 //definitions: arrayName__index1Name_index2Name_..._indexNName
 double calculateNextPrice(double currentPrice, double priceDelta);
 double calculateDelta(int buyer, int day);
-int doCalculations();
 int getRemainingBuyerBuyCapacity(int buyer, int onDay);
 int getRemainingBoxes(int onDay);
 
@@ -74,7 +73,7 @@ int main(int argc, char** argv) {
     ChocolatesSold__day_buyer = malloc(sizeof(int*) * Days);
     for (int day = 0;day < Days;day++) {
         ChocolatesSold__day_buyer[day] = malloc(sizeof(int) * Buyers);
-        for (int i2 = 0;i2 < Buyers;i2++) ChocolatesSold__day_buyer[day][i2] = doCalculations();
+        memset(ChocolatesSold__day_buyer[day], 0, sizeof(int) * Buyers);
     }
 
     //output
